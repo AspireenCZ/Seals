@@ -7,6 +7,7 @@ const SLIDE_SPEED := 507.0     ## fast slide burst
 const SLIDE_FRICTION := 0.992  ## lighter friction — ~250px slide
 const MAX_WANDER_SPEED := 900.0 ## uncapped for swim/leave (off-ice)
 const RADIUS := 18.0
+const ISO_H := 16.0   ## cylinder height in world-px
 const FISH_DETECT_RANGE := 1000.0
 const WANDER_CHANGE_TIME := 2.0
 const ICE_CENTER := Vector2(960, 540)
@@ -42,6 +43,22 @@ func _ready() -> void:
 	_start_swim_in()
 
 func _draw() -> void:
+	# --- ISO 3D: shadow + cylinder side ---
+	var shd_pts := PackedVector2Array()
+	for i in range(20):
+		var a := TAU * i / 20.0
+		shd_pts.append(Vector2(4.0 + cos(a) * (RADIUS + 2), RADIUS + ISO_H + 6.0 + sin(a) * 6.0))
+	draw_colored_polygon(shd_pts, Color(0.0, 0.04, 0.10, 0.20))
+	var seg := 20
+	var side_pts := PackedVector2Array()
+	for i in range(seg + 1):
+		var a := PI * i / seg
+		side_pts.append(Vector2(cos(a) * RADIUS * 0.8, sin(a) * RADIUS))
+	for i in range(seg + 1):
+		var a := PI * (seg - i) / seg
+		side_pts.append(Vector2(cos(a) * RADIUS * 0.8, sin(a) * RADIUS + ISO_H))
+	draw_colored_polygon(side_pts, Color(0.06, 0.06, 0.08))
+
 	# Body — black oval
 	var body_pts: PackedVector2Array = []
 	for i in range(20):

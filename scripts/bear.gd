@@ -5,6 +5,7 @@ const ACCEL := 300.0
 const MAX_SPEED := 180.0
 const FRICTION := 0.994
 const RADIUS := 50.0
+const ISO_H := 28.0   ## cylinder height in world-px
 const FISH_DETECT_RANGE := 2000.0
 const PLAYER_HUNT_RANGE := 300.0
 const MAX_FISH := 5
@@ -33,6 +34,22 @@ func _ready() -> void:
 	_start_swim_in()
 
 func _draw() -> void:
+	# --- ISO 3D: shadow + cylinder side ---
+	var shd_pts := PackedVector2Array()
+	for i in range(20):
+		var a := TAU * i / 20.0
+		shd_pts.append(Vector2(7.0 + cos(a) * (RADIUS + 5), RADIUS + ISO_H + 9.0 + sin(a) * 13.0))
+	draw_colored_polygon(shd_pts, Color(0.0, 0.03, 0.08, 0.22))
+	var seg := 20
+	var side_pts := PackedVector2Array()
+	for i in range(seg + 1):
+		var a := PI * i / seg
+		side_pts.append(Vector2(cos(a) * RADIUS, sin(a) * RADIUS))
+	for i in range(seg + 1):
+		var a := PI * (seg - i) / seg
+		side_pts.append(Vector2(cos(a) * RADIUS, sin(a) * RADIUS + ISO_H))
+	draw_colored_polygon(side_pts, Color(0.72, 0.72, 0.68))
+
 	# Body — large white circle
 	draw_circle(Vector2.ZERO, RADIUS, Color(0.95, 0.95, 0.93))
 	# Outline

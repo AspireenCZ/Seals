@@ -10,6 +10,7 @@ const MAX_SPEED := 320.0       ## px/s — normal movement cap
 const FURY_SPEED := 420.0      ## px/s — speed cap when charging in fury
 const FRICTION := 0.990        ## heavier friction than seal — stops more efficiently
 const RADIUS := 40.0
+const ISO_H := 24.0   ## cylinder height in world-px
 const FURY_RADIUS := 250.0     ## px — aggression detection range
 const FURY_COOLDOWN := 1.0     ## seconds target must stay outside radius to break lock
 const POST_FURY_PAUSE := 1.0   ## seconds walrus pauses after fury ends
@@ -427,6 +428,22 @@ func _pick_wander_dir() -> void:
 ## ============================================================
 
 func _draw() -> void:
+	# --- ISO 3D: shadow + cylinder side ---
+	var shd_pts := PackedVector2Array()
+	for i in range(20):
+		var a := TAU * i / 20.0
+		shd_pts.append(Vector2(6.0 + cos(a) * (RADIUS + 4), RADIUS + ISO_H + 8.0 + sin(a) * 11.0))
+	draw_colored_polygon(shd_pts, Color(0.0, 0.03, 0.08, 0.22))
+	var seg := 20
+	var side_pts := PackedVector2Array()
+	for i in range(seg + 1):
+		var a := PI * i / seg
+		side_pts.append(Vector2(cos(a) * RADIUS, sin(a) * RADIUS * 0.85))
+	for i in range(seg + 1):
+		var a := PI * (seg - i) / seg
+		side_pts.append(Vector2(cos(a) * RADIUS, sin(a) * RADIUS * 0.85 + ISO_H))
+	draw_colored_polygon(side_pts, Color(0.38, 0.27, 0.19))
+
 	# Body — large brown oval
 	var body_pts: PackedVector2Array = []
 	for i in range(24):

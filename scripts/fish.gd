@@ -33,6 +33,13 @@ func _ready() -> void:
 func _draw() -> void:
 	if state == State.COLLECTED:
 		return
+	# ISO 3D: flat shadow when landed
+	if state == State.LANDED:
+		var shd_pts := PackedVector2Array()
+		for i in range(16):
+			var a := TAU * i / 16.0
+			shd_pts.append(Vector2(3.0 + cos(a) * (FISH_SIZE.x * 0.6), FISH_SIZE.y * 0.35 + 8.0 + sin(a) * 5.0))
+		draw_colored_polygon(shd_pts, Color(0.0, 0.04, 0.10, 0.18))
 	var c := Color(1.0, 0.65, 0.1) if state == State.LANDED else Color(1, 0.6, 0, 0.5)
 	var outline_c := Color(0.7, 0.35, 0.0) if state == State.LANDED else Color(0.5, 0.3, 0, 0.4)
 	# Body ellipse

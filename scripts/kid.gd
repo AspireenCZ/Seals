@@ -319,6 +319,21 @@ func _draw_adult() -> void:
 	var off := _tremble
 	# Adult seal — same style as seal.gd but drawn as Node2D
 	var r := 28.0
+	const ISO_H_A := 20.0
+	# Shadow + cylinder side
+	var shd_pts := PackedVector2Array()
+	for i in range(20):
+		var a := TAU * i / 20.0
+		shd_pts.append(Vector2(5.0 + cos(a) * (r + 3), r + ISO_H_A + 7.0 + sin(a) * 9.0))
+	draw_colored_polygon(shd_pts, Color(0.0, 0.04, 0.10, 0.20))
+	var side_pts := PackedVector2Array()
+	for i in range(21):
+		var a := PI * i / 20.0
+		side_pts.append(Vector2(cos(a) * r, sin(a) * r))
+	for i in range(21):
+		var a := PI * (20 - i) / 20.0
+		side_pts.append(Vector2(cos(a) * r, sin(a) * r + ISO_H_A))
+	draw_colored_polygon(side_pts, body_color.darkened(0.38))
 	var center := Vector2(0, 0) + off
 	# Body circle
 	draw_circle(center, r, body_color)
@@ -346,6 +361,22 @@ func _draw_kid() -> void:
 	var off := _tremble
 	# Coat — lighter/warmer than parent
 	var coat: Color = body_color.lightened(0.15)
+	const ISO_H_K := 14.0
+	# Shadow + cylinder side (based on body oval bx=22, by=16)
+	var bx_k := 22.0; var by_k := 16.0
+	var shd_pts := PackedVector2Array()
+	for i in range(20):
+		var a := TAU * i / 20.0
+		shd_pts.append(Vector2(4.0 + cos(a) * (bx_k + 3), 4.0 + by_k + ISO_H_K + 5.0 + sin(a) * 7.0))
+	draw_colored_polygon(shd_pts, Color(0.0, 0.04, 0.10, 0.20))
+	var side_pts := PackedVector2Array()
+	for i in range(21):
+		var a := PI * i / 20.0
+		side_pts.append(Vector2(cos(a) * bx_k, 4.0 + sin(a) * by_k))
+	for i in range(21):
+		var a := PI * (20 - i) / 20.0
+		side_pts.append(Vector2(cos(a) * bx_k, 4.0 + sin(a) * by_k + ISO_H_K))
+	draw_colored_polygon(side_pts, coat.darkened(0.35))
 	# Body — squat oval
 	var bx := 22.0
 	var by := 16.0

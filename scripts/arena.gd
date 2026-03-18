@@ -48,9 +48,10 @@ var _bear_time := 0.0
 var _walrus_spawned := false
 var _walrus_time := 0.0
 
-## Camera drift
-var _camera: Camera2D
+## Camera / isometric transform
 var _drift_time := 0.0
+const ISO_CANVAS_Y := 0.72                              ## Y compression for semi-iso perspective
+const ISO_ORIGIN_Y := ICE_CENTER.y * (1.0 - 0.72)      ## ≈ 151 — re-centres after squish
 
 ## UI
 var _canvas: CanvasLayer
@@ -71,6 +72,19 @@ func _ready() -> void:
 	_init_animal_pacing()
 	_build_ui()
 	_build_camera()
+	_start_ambient()
+
+func _start_ambient() -> void:
+	var stream: AudioStreamMP3 = load("res://assets/Sounds/Ambient/ambient-sunnyday.mp3")
+	if stream == null:
+		push_warning("Ambient sound not found — check import.")
+		return
+	stream.loop = true
+	var player := AudioStreamPlayer.new()
+	player.stream = stream
+	player.volume_db = -6.0
+	add_child(player)
+	player.play()
 
 ## ============================================================
 ## Arena generation
@@ -269,6 +283,41 @@ func _build_arena() -> void:
 	rim.default_color = Color(0.6, 0.78, 0.95, 0.3)
 	rim.z_index = -4
 	_add_arena_node(rim)
+
+	# Ice cliff faces — give the floe a 3D raised-platform look in iso view.
+	# Each edge facing "downward" (toward viewer) gets a shaded quad below it.
+	# CLIFF_DEPTH is in world-space px; canvas Y-squish makes it look ~30 screen-px deep.
+	const CLIFF_DEPTH := 42.0
+	for ci in range(ice_polygon.size()):
+		var cni := (ci + 1) % ice_polygon.size()
+		var ca: Vector2 = ice_polygon[ci]
+		var cb: Vector2 = ice_polygon[cni]
+		var cmid := (ca + cb) * 0.5
+		var cout := (cmid - ICE_CENTER).normalized()
+		if cout.y < -0.5:  # edge faces nearly straight up — not visible as a cliff
+			continue
+		# Fake lighting: edges facing right are slightly darker
+		var shade := remap(cout.x, -1.0, 1.0, 0.92, 0.60)
+		var cliff_c := Color(0.58 * shade, 0.74 * shade, 0.90 * shade)
+		var cliff_quad := Polygon2D.new()
+		cliff_quad.polygon = PackedVector2Array([
+			ca, cb,
+			cb + Vector2(0.0, CLIFF_DEPTH),
+			ca + Vector2(0.0, CLIFF_DEPTH)
+		])
+		cliff_quad.color = cliff_c
+		cliff_quad.z_index = -6  # behind ice surface, above ocean
+		_add_arena_node(cliff_quad)
+		# Bottom shadow line
+		var cliff_edge := Line2D.new()
+		cliff_edge.points = PackedVector2Array([
+			ca + Vector2(0.0, CLIFF_DEPTH),
+			cb + Vector2(0.0, CLIFF_DEPTH)
+		])
+		cliff_edge.width = 2.5
+		cliff_edge.default_color = Color(0.25, 0.38, 0.55, 0.5)
+		cliff_edge.z_index = -6
+		_add_arena_node(cliff_edge)
 
 	# Edge drawing — walls vs open water
 	for idx in range(ice_polygon.size()):
@@ -778,11 +827,17 @@ func _build_ui() -> void:
 	_update_ui()
 
 func _build_camera() -> void:
-	_camera = Camera2D.new()
-	_camera.position = ICE_CENTER
-	_camera.zoom = Vector2(1.0, 1.0)
-	_camera.enabled = true
-	add_child(_camera)
+	## iso3d: no Camera2D — canvas_transform is managed directly in _process.
+	_apply_iso_transform(Vector2.ZERO)
+
+func _apply_iso_transform(drift: Vector2) -> void:
+	## Squish Y by ISO_CANVAS_Y so the flat top-down world looks semi-isometric.
+	## CanvasLayer (UI) is on a separate canvas and is unaffected.
+	get_viewport().canvas_transform = Transform2D(
+		Vector2(1.0, 0.0),
+		Vector2(0.0, ISO_CANVAS_Y),
+		Vector2(-drift.x, ISO_ORIGIN_Y - drift.y * ISO_CANVAS_Y)
+	)
 
 ## ============================================================
 ## Game loop
@@ -794,7 +849,7 @@ func _process(delta: float) -> void:
 		return
 
 	_drift_time += delta
-	_camera.offset = Vector2(sin(_drift_time * 0.3) * 8, cos(_drift_time * 0.2) * 5)
+	_apply_iso_transform(Vector2(sin(_drift_time * 0.3) * 8.0, cos(_drift_time * 0.2) * 5.0))
 
 	_update_animal_pacing(delta)
 

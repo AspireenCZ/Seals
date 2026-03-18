@@ -11,6 +11,7 @@ const MAX_SPEED := 420.0     ## unused, no cap
 const BRAKE_ACCEL := 900.0   ## pixels/s² — braking is faster than accelerating
 const BUMP_FORCE := 400.0    ## impulse on collision with another seal
 const RADIUS := 28.0
+const ISO_H := 20.0   ## body cylinder height in world-px (≈14 screen-px at canvas 0.72)
 
 var _input_prefix: String
 var _respawn_timer := 0.0
@@ -35,6 +36,24 @@ func _ready() -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	# --- ISO 3D: shadow + cylinder side (drawn behind body) ---
+	# Drop shadow (flat ellipse on the "ground" below the creature)
+	var shd_pts := PackedVector2Array()
+	for i in range(20):
+		var a := TAU * i / 20.0
+		shd_pts.append(Vector2(5.0 + cos(a) * (RADIUS + 3), RADIUS + ISO_H + 7.0 + sin(a) * 9.0))
+	draw_colored_polygon(shd_pts, Color(0.0, 0.04, 0.10, 0.22))
+	# Cylinder side (front face between top-face edge and ground level)
+	var seg := 20
+	var side_pts := PackedVector2Array()
+	for i in range(seg + 1):
+		var a := PI * i / seg
+		side_pts.append(Vector2(cos(a) * RADIUS, sin(a) * RADIUS))
+	for i in range(seg + 1):
+		var a := PI * (seg - i) / seg
+		side_pts.append(Vector2(cos(a) * RADIUS, sin(a) * RADIUS + ISO_H))
+	draw_colored_polygon(side_pts, body_color.darkened(0.38))
+
 	# Body
 	draw_circle(Vector2.ZERO, RADIUS, body_color)
 	# Outline
